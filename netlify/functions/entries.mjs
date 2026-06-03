@@ -3,19 +3,18 @@ import { getStore } from "@netlify/blobs";
 const STORE_NAME = "ritmo";
 const BLOB_KEY = "entries.json";
 
-const headers = {
+const baseHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "Content-Type, X-Ritmo-Key",
   "Access-Control-Allow-Methods": "GET, PUT, OPTIONS",
   "Content-Type": "application/json"
 };
 
-function json(statusCode, payload) {
-  return {
-    statusCode,
-    headers,
-    body: JSON.stringify(payload)
-  };
+function json(status, payload) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: baseHeaders
+  });
 }
 
 function sanitizeEntry(entry) {
@@ -40,32 +39,46 @@ function sanitizeEntries(entries) {
   return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-function isAuthorized(event) {
+function authorize(request) {
   const expectedKey = process.env.RITMO_SYNC_KEY;
-  const providedKey = event.headers["x-ritmo-key"] || event.headers["X-Ritmo-Key"];
+  const providedKey = request.headers.get("X-Ritmo-Key");
 
-  if (!expectedKey) return { ok: false, status: 500, message: "Falta configurar RITMO_SYNC_KEY en Netlify." };
-  if (providedKey !== expectedKey) return { ok: false, status: 401, message: "Clave de sincronizacion incorrecta." };
+  if (!expectedKey) {
+    return { ok: false, status: 500, message: "Falta configurar RITMO_SYNC_KEY en Netlify." };
+  }
+
+  if (providedKey !== expectedKey) {
+    return { ok: false, status: 401, message: "Clave de sincronizacion incorrecta." };
+  }
+
   return { ok: true };
 }
 
-export async function handler(event) {
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers, body: "" };
+export default async function handler(request) {
+  if (request.method === "OPTIONS") {
+    return new Response("", { status: 204, headers: baseHeaders });
   }
 
-  const auth = isAuthorized(event);
+  const auth = authorize(request);
   if (!auth.ok) return json(auth.status, { message: auth.message });
 
-  const store = getStore(STORE_NAME);
+  let store;
+  try {
+    store = getStore({ name: STORE_NAME, consistency: "strong" });
+  } catch (error) {
+    return json(500, {
+      message: "Netlify Blobs no esta disponible para esta Function. Revisa que el deploy venga desde GitHub y vuelve a desplegar.",
+      detail: error?.name || "BlobsError"
+    });
+  }
 
-  if (event.httpMethod === "GET") {
-    const saved = await store.get(BLOB_KEY, { type: "json" });
+  if (request.method === "GET") {
+    const saved = await store.get(BLOB_KEY, { type: "json", consistency: "strong" });
     return json(200, { entries: sanitizeEntries(saved?.entries), updatedAt: saved?.updatedAt || null });
   }
 
-  if (event.httpMethod === "PUT") {
-    const body = JSON.parse(event.body || "{}");
+  if (request.method === "PUT") {
+    const body = await request.json().catch(() => ({}));
     const entries = sanitizeEntries(body.entries);
     const payload = { entries, updatedAt: new Date().toISOString() };
     await store.setJSON(BLOB_KEY, payload);
