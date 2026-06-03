@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#18a999">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Ritmo">
+    <title>Ritmo</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Lifestyle tracker</p>
+          <h1>Ritmo</h1>
+        </div>
+        <button class="icon-button" id="installButton" type="button" hidden aria-label="Instalar app">
+          <span aria-hidden="true">+</span>
+        </button>
+      </header>
+
+      <main>
+        <section class="hero-panel" aria-labelledby="today-title">
+          <div class="orbital-art" aria-hidden="true">
+            <div class="sun-core"></div>
+            <div class="orbit orbit-one"></div>
+            <div class="orbit orbit-two"></div>
+            <div class="spark spark-a"></div>
+            <div class="spark spark-b"></div>
+          </div>
+          <div class="today-copy">
+            <p class="date-label" id="todayDate"></p>
+            <h2 id="today-title">Tu check-in de la mañana</h2>
+            <p id="streakText">Cargando tu racha...</p>
+          </div>
+        </section>
+
+        <section class="entry-panel" aria-label="Registro diario">
+          <form id="entryForm" autocomplete="off">
+            <label class="field">
+              <span>Fecha del registro</span>
+              <div class="input-row">
+                <input id="dateInput" name="date" type="date" required>
+              </div>
+            </label>
+
+            <label class="field">
+              <span>Peso corporal</span>
+              <div class="input-row">
+                <input id="weightInput" name="weight" type="number" step="0.1" min="20" max="300" inputmode="decimal" placeholder="72.4" required>
+                <strong>kg</strong>
+              </div>
+            </label>
+
+            <label class="field">
+              <span>Horas de ayuno</span>
+              <div class="input-row">
+                <input id="fastingInput" name="fasting" type="number" step="0.5" min="0" max="48" inputmode="decimal" placeholder="14">
+                <strong>h</strong>
+              </div>
+            </label>
+
+            <label class="field">
+              <span>Nota breve</span>
+              <textarea id="noteInput" name="note" rows="2" maxlength="160" placeholder="Entrené, dormí bien, mucha sal..."></textarea>
+            </label>
+
+            <button class="primary-button" type="submit">Guardar registro</button>
+          </form>
+        </section>
+
+        <section class="sync-panel" aria-label="Sincronizacion con Netlify">
+          <div>
+            <p class="eyebrow">Netlify</p>
+            <h2>Datos en la nube</h2>
+            <p id="syncStatus">Todavia no sincronizaste con Netlify.</p>
+          </div>
+          <div class="sync-actions">
+            <button class="ghost-button" id="syncButton" type="button">Sincronizar</button>
+            <button class="text-button" id="resetSyncButton" type="button">Cambiar clave</button>
+          </div>
+        </section>
+
+        <section class="stats-grid" aria-label="Resumen">
+          <article class="stat-card">
+            <span>Promedio 7 días</span>
+            <strong id="avgWeight">--</strong>
+            <small>Peso</small>
+          </article>
+          <article class="stat-card">
+            <span>Cambio 30 días</span>
+            <strong id="weightChange">--</strong>
+            <small>Tendencia</small>
+          </article>
+          <article class="stat-card">
+            <span>Ayuno promedio</span>
+            <strong id="avgFasting">--</strong>
+            <small>Últimos 7 días</small>
+          </article>
+        </section>
+
+        <section class="chart-section" aria-labelledby="chart-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Análisis</p>
+              <h2 id="chart-title">Evolución</h2>
+            </div>
+            <div class="segmented-control" role="group" aria-label="Rango del gráfico">
+              <button type="button" class="range-button active" data-range="14">14d</button>
+              <button type="button" class="range-button" data-range="30">30d</button>
+              <button type="button" class="range-button" data-range="90">90d</button>
+            </div>
+          </div>
+          <canvas id="trendChart" width="720" height="360" aria-label="Grafico de peso y ayuno" role="img"></canvas>
+          <p class="insight" id="insightText">Agregá algunos registros para ver patrones.</p>
+        </section>
+
+        <section class="history-section" aria-labelledby="history-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Diario</p>
+              <h2 id="history-title">Registros</h2>
+            </div>
+            <button class="ghost-button" id="exportButton" type="button">Exportar CSV</button>
+          </div>
+          <div class="history-list" id="historyList"></div>
+        </section>
+      </main>
+    </div>
+
+    <template id="historyItemTemplate">
+      <article class="history-item">
+        <div>
+          <strong class="history-date"></strong>
+          <p class="history-note"></p>
+        </div>
+        <div class="history-values">
+          <span class="history-weight"></span>
+          <span class="history-fast"></span>
+        </div>
+        <button class="delete-button" type="button" aria-label="Eliminar registro">x</button>
+      </article>
+    </template>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
